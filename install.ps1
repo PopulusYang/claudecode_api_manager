@@ -80,7 +80,17 @@ Write-Info "构建依赖安装完成"
 # --- 获取源码 ---
 Write-Step "准备源码"
 
-$ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Definition
+# 当通过 irm ... | iex 远程执行时, $MyInvocation.MyCommand.Definition 不可用,
+# 需要先将脚本下载到临时路径,再从 GitHub 获取源码
+if ($MyInvocation.MyCommand.Definition -and (Test-Path $MyInvocation.MyCommand.Definition)) {
+    $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Definition
+} else {
+    # 远程管道执行: 使用临时目录
+    $ScriptDir = Join-Path $env:TEMP "claude-mng-install-$PID"
+    if (-not (Test-Path $ScriptDir)) {
+        New-Item -ItemType Directory -Path $ScriptDir -Force | Out-Null
+    }
+}
 $SourceFile = Join-Path $ScriptDir "claude_settings_manager.py"
 
 if (Test-Path $SourceFile) {
@@ -88,23 +98,40 @@ if (Test-Path $SourceFile) {
     $BuildDir = $ScriptDir
     $CopySource = $true
 } else {
-    Write-Warn "未检测到本地源码,将从 GitHub 克隆"
-    $RepoUrl = Read-Host "请输入仓库地址 (直接回车使用默认)"
-    if ([string]::IsNullOrWhiteSpace($RepoUrl)) {
-        $RepoUrl = "https://github.com/PopulusYang/claudecode_api_manager.git"
-    }
+    Write-Info "未检测到本地源码,尝试从 GitHub 下载"
 
-    if (-not (Get-Command git -ErrorAction SilentlyContinue)) {
-        Write-Err "未找到 git,请先安装 Git"
-        exit 1
-    }
+    # 优先尝试直接下载单个 Python 文件 (不需要 git)
+    $RepoBranch = "main"
+    $RawBaseUrl = "https://raw.githubusercontent.com/PopulusYang/claudecode_api_manager/$RepoBranch"
+    $SourceUrl = "$RawBaseUrl/claude_settings_manager.py"
 
-    if (-not (Test-Path $InstallDir)) {
-        New-Item -ItemType Directory -Path $InstallDir -Force | Out-Null
+    try {
+        Write-Info "下载 $SourceUrl ..."
+        [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+        Invoke-WebRequest -Uri $SourceUrl -OutFile $SourceFile -UseBasicParsing
+        $BuildDir = $ScriptDir
+        $CopySource = $true
+        Write-Info "源码下载完成"
+    } catch {
+        Write-Warn "直接下载失败,尝试使用 git 克隆"
+
+        if (-not (Get-Command git -ErrorAction SilentlyContinue)) {
+            Write-Err "未找到 git,也无法下载源码,请手动安装"
+            exit 1
+        }
+
+        $RepoUrl = Read-Host "请输入仓库地址 (直接回车使用默认)"
+        if ([string]::IsNullOrWhiteSpace($RepoUrl)) {
+            $RepoUrl = "https://github.com/PopulusYang/claudecode_api_manager.git"
+        }
+
+        if (-not (Test-Path $InstallDir)) {
+            New-Item -ItemType Directory -Path $InstallDir -Force | Out-Null
+        }
+        & git clone $RepoUrl $InstallDir
+        $BuildDir = $InstallDir
+        $CopySource = $false
     }
-    & git clone $RepoUrl $InstallDir
-    $BuildDir = $InstallDir
-    $CopySource = $false
 }
 
 # --- 编译二进制 ---
