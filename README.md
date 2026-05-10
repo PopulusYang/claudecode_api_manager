@@ -6,9 +6,17 @@
 
  ## 一键安装
 
-  ```bash
-  curl -sSL https://raw.githubusercontent.com/PopulusYang/claudecode_api_manager/main/install.sh | bash
-  ```
+**Linux / macOS:**
+
+ ```bash
+ curl -sSL https://raw.githubusercontent.com/PopulusYang/claudecode_api_manager/main/install.sh | bash
+ ```
+
+**Windows (PowerShell):**
+
+ ```powershell
+ irm https://raw.githubusercontent.com/PopulusYang/claudecode_api_manager/main/install.ps1 | iex
+ ```
 
 ## 支持的提供商
 
