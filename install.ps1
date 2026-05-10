@@ -82,8 +82,9 @@ Write-Step "准备源码"
 
 # 当通过 irm ... | iex 远程执行时, $MyInvocation.MyCommand.Definition 不可用,
 # 需要先将脚本下载到临时路径,再从 GitHub 获取源码
-if ($MyInvocation.MyCommand.Definition -and (Test-Path $MyInvocation.MyCommand.Definition)) {
-    $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Definition
+$ScriptPath = $MyInvocation.MyCommand.Definition
+if ($ScriptPath -and (Test-Path $ScriptPath -PathType Leaf)) {
+    $ScriptDir = Split-Path -Parent $ScriptPath
 } else {
     # 远程管道执行: 使用临时目录
     $ScriptDir = Join-Path $env:TEMP "claude-mng-install-$PID"
