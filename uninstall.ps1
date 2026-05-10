@@ -6,7 +6,7 @@
 # ============================================
 
 $ErrorActionPreference = "Stop"
-$ScriptVersion = "0.0.1-beta"
+$InstallerVersion = "0.0.1-beta"
 
 # --- 颜色输出 ---
 function Write-Info    { param($m) Write-Host "[INFO] $m" -ForegroundColor Green }
@@ -14,7 +14,7 @@ function Write-Warn    { param($m) Write-Host "[WARN] $m" -ForegroundColor Yello
 function Write-Err     { param($m) Write-Host "[ERROR] $m" -ForegroundColor Red }
 function Write-Step    { param($m) Write-Host "==>$m" -ForegroundColor Cyan }
 
-Write-Info "Claude Code Settings Manager 卸载脚本 $ScriptVersion"
+Write-Info "卸载脚本版本: $InstallerVersion"
 
 $BinName = "claude-mng.exe"
 $IsAdmin = ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole(

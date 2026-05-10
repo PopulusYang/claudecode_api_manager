@@ -1,4 +1,4 @@
-__version__ = "0.0.1-beta"
+__app_version__ = "0.0.1-beta"
 
 """
 Claude Code Settings Manager - 国内AI厂商配置管理器
@@ -939,7 +939,7 @@ def build_parser():
         prog="claude-mng",
         description="Claude Code Settings Manager - 国内AI厂商配置管理器",
     )
-    parser.add_argument("--version", "-v", action="version", version=f"%(prog)s {__version__}")
+    parser.add_argument("--version", "-v", action="version", version=f"%(prog)s {__app_version__}")
     sub = parser.add_subparsers(dest="command", metavar="<command>")
 
     sub.add_parser("list", help="列出所有支持的提供商")

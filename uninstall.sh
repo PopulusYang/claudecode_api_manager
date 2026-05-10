@@ -12,14 +12,14 @@ YELLOW='\033[1;33m'
 CYAN='\033[0;36m'
 NC='\033[0m'
 
-SCRIPT_VERSION="0.0.1-beta"
+INSTALLER_VERSION="0.0.1-beta"
 
 log_info()  { echo -e "${GREEN}[INFO]${NC} $1"; }
 log_warn()  { echo -e "${YELLOW}[WARN]${NC} $1"; }
 log_error() { echo -e "${RED}[ERROR]${NC} $1"; }
 log_step()  { echo -e "${CYAN}==> $1${NC}"; }
 
-log_info "Claude Code Settings Manager 卸载脚本 ${SCRIPT_VERSION}"
+log_info "卸载脚本版本: ${INSTALLER_VERSION}"
 
 BIN_NAME="claude-mng"
 BIN_PATH="/usr/local/bin/${BIN_NAME}"
