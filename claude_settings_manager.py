@@ -1,4 +1,4 @@
-__app_version__ = "0.0.2-beta"
+__app_version__ = "0.0.3-beta"
 
 """
 Claude Code Settings Manager - 国内AI厂商配置管理器

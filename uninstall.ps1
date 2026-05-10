@@ -11,7 +11,7 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
-$InstallerVersion = "0.0.2-beta"
+$InstallerVersion = "0.0.3-beta"
 
 # --- 颜色输出 ---
 function Write-Info    { param($m) Write-Host "[INFO] $m" -ForegroundColor Green }
@@ -92,7 +92,7 @@ $UserPath = [Environment]::GetEnvironmentVariable("PATH", "User")
 $InPath = ($UserPath -split [IO.Path]::PathSeparator) -contains $BinDir
 
 if ($InPath) {
-    $NewPath = ($UserPath -split [IO.Path]::PathSeparator) | Where-Object { $_ -ne $BinDir } | Join-String -Separator ";"
+    $NewPath = (($UserPath -split [IO.Path]::PathSeparator) | Where-Object { $_ -ne $BinDir }) -join [IO.Path]::PathSeparator
     [Environment]::SetEnvironmentVariable("PATH", $NewPath, "User")
     Write-Info "已从用户 PATH 中移除 $BinDir"
 } else {
@@ -100,7 +100,7 @@ if ($InPath) {
 }
 
 # --- 从当前会话 PATH 中移除 ---
-$env:PATH = ($env:PATH -split [IO.Path]::PathSeparator) | Where-Object { $_ -ne $BinDir } | Join-String -Separator ";"
+$env:PATH = (($env:PATH -split [IO.Path]::PathSeparator) | Where-Object { $_ -ne $BinDir }) -join [IO.Path]::PathSeparator
 
 # --- 清理构建产物(如果源码仍在本地) ---
 $SourceDir = Split-Path -Parent $MyInvocation.MyCommand.Definition

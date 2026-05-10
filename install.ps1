@@ -7,7 +7,7 @@
 # ============================================
 
 $ErrorActionPreference = "Stop"
-$InstallerVersion = "0.0.2-beta"
+$InstallerVersion = "0.0.3-beta"
 
 # --- 颜色输出 ---
 function Write-Info    { param($m) Write-Host "[INFO] $m" -ForegroundColor Green }
