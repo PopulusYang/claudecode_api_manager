@@ -22,8 +22,19 @@ INSTALL_DIR="/opt/claude-mng"
 BIN_NAME="claude-mng"
 BIN_PATH="/usr/local/bin/${BIN_NAME}"
 
-# --- 检查前置条件 ---
+# --- 权限检测 ---
 log_step "检查系统环境"
+
+if [[ $EUID -eq 0 ]]; then
+    log_info "以 root 运行，安装到系统目录 ${INSTALL_DIR}"
+    SYSTEM_INSTALL=true
+else
+    log_warn "非 root 运行，将安装到用户目录 ~/.local/claude-mng"
+    INSTALL_DIR="${HOME}/.local/claude-mng"
+    BIN_PATH="${HOME}/.local/bin/${BIN_NAME}"
+    SYSTEM_INSTALL=false
+    mkdir -p "${HOME}/.local/bin"
+fi
 
 if ! command -v python3 &>/dev/null; then
     log_error "未找到 python3，请先安装 Python 3.10+"
@@ -97,9 +108,24 @@ if [[ -f "${BIN_PATH}" ]]; then
     fi
 fi
 
-mkdir -p /usr/local/bin
+if $SYSTEM_INSTALL; then
+    mkdir -p /usr/local/bin
+else
+    mkdir -p "${HOME}/.local/bin"
+fi
 cp "${BUILD_TEMP}/dist/claude-mng" "${BIN_PATH}"
 chmod +x "${BIN_PATH}"
+
+if ! $SYSTEM_INSTALL; then
+    echo ""
+    log_info "请将 ${HOME}/.local/bin 加入 PATH:"
+    echo "  export PATH=\"\$HOME/.local/bin:\$PATH\""
+    if [[ ":$PATH:" != *":$HOME/.local/bin:"* ]]; then
+        echo "" >> "${HOME}/.bashrc"
+        echo 'export PATH="$HOME/.local/bin:$PATH"' >> "${HOME}/.bashrc"
+        log_info "已自动写入 ~/.bashrc"
+    fi
+fi
 
 # --- 清理构建产物 ---
 rm -rf "${BUILD_TEMP}"
