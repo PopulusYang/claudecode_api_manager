@@ -13,7 +13,7 @@ YELLOW='\033[1;33m'
 CYAN='\033[0;36m'
 NC='\033[0m'
 
-INSTALLER_VERSION="0.0.5-beta"
+INSTALLER_VERSION="0.0.6-beta"
 
 log_info()  { echo -e "${GREEN}[INFO]${NC} $1"; }
 log_warn()  { echo -e "${YELLOW}[WARN]${NC} $1"; }
@@ -69,7 +69,9 @@ log_step "准备源码"
 if [[ -n "${BASH_SOURCE[0]+x}" && -f "${BASH_SOURCE[0]}" ]]; then
     SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 else
-    SCRIPT_DIR="$(pwd)"
+    # 管道执行: 使用临时目录，确保每次都是最新源码
+    SCRIPT_DIR="$(mktemp -d /tmp/claude-mng-install.XXXXXX)"
+    trap 'rm -rf "${SCRIPT_DIR}"' EXIT
 fi
 
 if [[ -f "${SCRIPT_DIR}/claude_settings_manager.py" ]]; then
@@ -77,7 +79,7 @@ if [[ -f "${SCRIPT_DIR}/claude_settings_manager.py" ]]; then
     BUILD_DIR="${SCRIPT_DIR}"
     COPY_SOURCE=true
 else
-    log_info "未检测到本地源码，尝试从 GitHub 下载"
+    log_info "未检测到本地源码，从 GitHub 下载"
 
     REPO_BRANCH="main"
     RAW_BASE_URL="https://raw.githubusercontent.com/PopulusYang/claudecode_api_manager/${REPO_BRANCH}"
@@ -92,7 +94,7 @@ else
 
         BUILD_DIR="${SCRIPT_DIR}"
         COPY_SOURCE=true
-        log_info "源码下载完成"
+        log_info "源码下载完成 (${SCRIPT_DIR})"
     else
         log_warn "直接下载失败，将从 GitHub 克隆"
         read -rp "请输入仓库地址 (直接回车使用默认): " repo_url
