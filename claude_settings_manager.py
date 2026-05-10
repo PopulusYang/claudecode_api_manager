@@ -916,10 +916,13 @@ def do_uninstall(no_backup: bool = False, no_cache: bool = False):
         print()
         print("  运行卸载脚本...")
         if sys.platform == "win32":
-            os.system(f'powershell -ExecutionPolicy Bypass -File "{uninstall_script}"')
+            os.system(
+                f'powershell -ExecutionPolicy Bypass -File "{uninstall_script}" '
+                f'-BinDir "{bin_dir}" -InstallDir "{install_dir}"'
+            )
         else:
             os.chmod(uninstall_script, 0o755)
-            os.system(f'bash "{uninstall_script}"')
+            os.system(f'bash "{uninstall_script}" --bin-dir "{bin_dir}" --install-dir "{install_dir}"')
     else:
         # 没有卸载脚本时,使用延迟自删
         print()

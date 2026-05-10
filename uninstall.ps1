@@ -16,19 +16,31 @@ function Write-Step    { param($m) Write-Host "==>$m" -ForegroundColor Cyan }
 
 Write-Info "卸载脚本版本: $InstallerVersion"
 
-$BinName = "claude-mng.exe"
-$IsAdmin = ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole(
-               [Security.Principal.WindowsBuiltInRole]::Administrator)
+# --- 参数: 接收调用者传入的实际安装路径 ---
+param(
+    [string]$BinDir = "",
+    [string]$InstallDir = ""
+)
 
-# --- 确定要卸载的路径 ---
-if ($IsAdmin) {
-    $InstallDir  = Join-Path $env:ProgramFiles "claude-mng"
-    $BinDir      = Join-Path $env:ProgramFiles "claude-mng"
-    Write-Info "以管理员运行,将卸载系统目录 $InstallDir"
+$BinName = "claude-mng.exe"
+
+if ($BinDir -and $InstallDir) {
+    Write-Info "使用调用者传入的安装路径"
+    Write-Info "安装目录: $InstallDir"
+    Write-Info "二进制目录: $BinDir"
 } else {
-    $InstallDir  = Join-Path $env:LOCALAPPDATA "claude-mng"
-    $BinDir      = Join-Path $env:LOCALAPPDATA "bin"
-    Write-Info "将卸载用户目录安装 $InstallDir"
+    # 无参数时根据权限推断路径
+    $IsAdmin = ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole(
+                   [Security.Principal.WindowsBuiltInRole]::Administrator)
+    if ($IsAdmin) {
+        $InstallDir  = Join-Path $env:ProgramFiles "claude-mng"
+        $BinDir      = Join-Path $env:ProgramFiles "claude-mng"
+        Write-Info "以管理员运行,将卸载系统目录 $InstallDir"
+    } else {
+        $InstallDir  = Join-Path $env:LOCALAPPDATA "claude-mng"
+        $BinDir      = Join-Path $env:LOCALAPPDATA "bin"
+        Write-Info "将卸载用户目录安装 $InstallDir"
+    }
 }
 
 Write-Step "检查安装状态"

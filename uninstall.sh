@@ -22,18 +22,39 @@ log_step()  { echo -e "${CYAN}==> $1${NC}"; }
 log_info "卸载脚本版本: ${INSTALLER_VERSION}"
 
 BIN_NAME="claude-mng"
-BIN_PATH="/usr/local/bin/${BIN_NAME}"
-INSTALL_DIR="/opt/claude-mng"
 
-# --- 权限检测 ---
-if [[ $EUID -eq 0 ]]; then
-    log_info "以 root 运行，将卸载系统目录 ${INSTALL_DIR}"
-    SYSTEM_INSTALL=true
-else
-    INSTALL_DIR="${HOME}/.local/claude-mng"
-    BIN_PATH="${HOME}/.local/bin/${BIN_NAME}"
+# --- 解析参数 ---
+CALLER_BIN_DIR=""
+CALLER_INSTALL_DIR=""
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --bin-dir) CALLER_BIN_DIR="$2"; shift 2 ;;
+        --install-dir) CALLER_INSTALL_DIR="$2"; shift 2 ;;
+        *) shift ;;
+    esac
+done
+
+if [[ -n "$CALLER_BIN_DIR" && -n "$CALLER_INSTALL_DIR" ]]; then
+    log_info "使用调用者传入的安装路径"
+    log_info "安装目录: ${CALLER_INSTALL_DIR}"
+    log_info "二进制目录: ${CALLER_BIN_DIR}"
+    BIN_PATH="${CALLER_BIN_DIR}/${BIN_NAME}"
+    INSTALL_DIR="${CALLER_INSTALL_DIR}"
     SYSTEM_INSTALL=false
-    log_info "将卸载用户目录安装 ${INSTALL_DIR}"
+else
+    # 无参数时根据权限推断路径
+    BIN_PATH="/usr/local/bin/${BIN_NAME}"
+    INSTALL_DIR="/opt/claude-mng"
+    if [[ $EUID -eq 0 ]]; then
+        log_info "以 root 运行，将卸载系统目录 ${INSTALL_DIR}"
+        SYSTEM_INSTALL=true
+    else
+        INSTALL_DIR="${HOME}/.local/claude-mng"
+        BIN_PATH="${HOME}/.local/bin/${BIN_NAME}"
+        SYSTEM_INSTALL=false
+        log_info "将卸载用户目录安装 ${INSTALL_DIR}"
+    fi
 fi
 
 log_step "检查安装状态"
