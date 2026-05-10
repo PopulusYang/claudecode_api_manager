@@ -25,6 +25,7 @@ except ImportError:
 
 try:
     import getpass
+
     HAS_GETPASS = True
 except ImportError:
     HAS_GETPASS = False
@@ -307,15 +308,22 @@ class APIVault:
     @staticmethod
     def _encrypt(plaintext: str, password: str) -> str:
         import base64
+
         salt = os.urandom(16)
         key = APIVault._derive_key(password, salt)
         fernet = Fernet(base64.urlsafe_b64encode(key))
         encrypted = fernet.encrypt(plaintext.encode("utf-8"))
-        return json.dumps({"salt": base64.urlsafe_b64encode(salt).decode(), "data": encrypted.decode()})
+        return json.dumps(
+            {
+                "salt": base64.urlsafe_b64encode(salt).decode(),
+                "data": encrypted.decode(),
+            }
+        )
 
     @staticmethod
     def _decrypt(cipher_json: str, password: str) -> str:
         import base64
+
         obj = json.loads(cipher_json)
         salt = base64.urlsafe_b64decode(obj["salt"])
         key = APIVault._derive_key(password, salt)
@@ -441,7 +449,9 @@ def build_env_config(provider_key, api_key, model=None, plan=None):
     return env
 
 
-def apply_config(scope, provider_key, api_key, model=None, plan=None, merge=True, do_backup=True):
+def apply_config(
+    scope, provider_key, api_key, model=None, plan=None, merge=True, do_backup=True
+):
     """应用配置到 settings.json"""
     # 全局配置前确认
     if scope == "global" and not confirm_global():
@@ -531,8 +541,14 @@ def show_pricing(provider_key=None):
         print(f"  {'-' * 28} {'-' * 12} {'-' * 12} {'-' * 12}")
 
         for m in provider["models"]:
-            hit = f"¥{m['price_input_hit']}" if m["price_input_hit"] is not None else "-"
-            miss = f"¥{m['price_input_miss']}" if m["price_input_miss"] is not None else "-"
+            hit = (
+                f"¥{m['price_input_hit']}" if m["price_input_hit"] is not None else "-"
+            )
+            miss = (
+                f"¥{m['price_input_miss']}"
+                if m["price_input_miss"] is not None
+                else "-"
+            )
             out = f"¥{m['price_output']}" if m["price_output"] is not None else "-"
             print(f"  {m['display']:<28} {hit:<12} {miss:<12} {out:<12}")
 
@@ -665,7 +681,9 @@ def interactive_config():
         print(f"  {i}. {m['display']}")
         print(f"     {m['note']}")
 
-    model_choice = input(f"\n选择模型 (1-{len(provider['models'])}, 回车使用默认): ").strip()
+    model_choice = input(
+        f"\n选择模型 (1-{len(provider['models'])}, 回车使用默认): "
+    ).strip()
     if model_choice:
         try:
             model_idx = int(model_choice) - 1
@@ -693,6 +711,7 @@ def interactive_config():
 
 
 # --------------- Vault Management Commands ---------------
+
 
 def vault_list():
     """列出所有已保存的 API Key 标签"""
@@ -824,7 +843,9 @@ def remove_config(scope, provider_key=None, do_backup=True):
 def do_uninstall(no_backup: bool = False, no_cache: bool = False):
     """交互式卸载:备份配置/缓存后删除程序"""
 
-    exe_path = os.path.abspath(sys.executable if getattr(sys, "frozen", False) else __file__)
+    exe_path = os.path.abspath(
+        sys.executable if getattr(sys, "frozen", False) else __file__
+    )
     bin_dir = os.path.dirname(exe_path)
     is_frozen = getattr(sys, "frozen", False)
 
@@ -920,15 +941,19 @@ def do_uninstall(no_backup: bool = False, no_cache: bool = False):
             # Windows: 生成临时 bat, 等待本进程退出后再执行卸载脚本
             bat = os.path.join(os.environ.get("TEMP", ""), "claude-mng-uninstall.bat")
             with open(bat, "w") as f:
-                f.write(f'@echo off\n')
-                f.write(f'timeout /t 2 /nobreak >nul\n')
-                f.write(f'powershell -ExecutionPolicy Bypass -File "{uninstall_script}" '
-                        f'-BinDir "{bin_dir}" -InstallDir "{install_dir}"\n')
+                f.write(f"@echo off\n")
+                f.write(f"timeout /t 2 /nobreak >nul\n")
+                f.write(
+                    f'powershell -ExecutionPolicy Bypass -File "{uninstall_script}" '
+                    f'-BinDir "{bin_dir}" -InstallDir "{install_dir}"\n'
+                )
                 f.write(f'del "%~f0"\n')
             subprocess.Popen(["cmd", "/c", "start", "/min", bat], shell=True)
         else:
             os.chmod(uninstall_script, 0o755)
-            os.system(f'bash "{uninstall_script}" --bin-dir "{bin_dir}" --install-dir "{install_dir}"')
+            os.system(
+                f'bash "{uninstall_script}" --bin-dir "{bin_dir}" --install-dir "{install_dir}"'
+            )
     else:
         # 没有卸载脚本时,使用延迟自删
         print()
@@ -939,8 +964,8 @@ def do_uninstall(no_backup: bool = False, no_cache: bool = False):
             if not self_exe.endswith(".exe"):
                 self_exe = os.path.join(bin_dir, "claude-mng.exe")
             with open(bat, "w") as f:
-                f.write(f'@echo off\n')
-                f.write(f'timeout /t 2 /nobreak >nul\n')
+                f.write(f"@echo off\n")
+                f.write(f"timeout /t 2 /nobreak >nul\n")
                 f.write(f'del /f /q "{self_exe}"\n')
                 if os.path.isdir(install_dir):
                     f.write(f'rmdir /s /q "{install_dir}"\n')
@@ -951,10 +976,8 @@ def do_uninstall(no_backup: bool = False, no_cache: bool = False):
                 os.remove(exe_path)
             if os.path.isdir(install_dir):
                 shutil.rmtree(install_dir, ignore_errors=True)
-            print("  程序文件已删除")
 
     print()
-    print("  卸载完成")
 
 
 def build_parser():
@@ -963,7 +986,9 @@ def build_parser():
         prog="claude-mng",
         description="Claude Code Settings Manager - 国内AI厂商配置管理器",
     )
-    parser.add_argument("--version", "-v", action="version", version=f"%(prog)s {__app_version__}")
+    parser.add_argument(
+        "--version", "-v", action="version", version=f"%(prog)s {__app_version__}"
+    )
     sub = parser.add_subparsers(dest="command", metavar="<command>")
 
     sub.add_parser("list", help="列出所有支持的提供商")
@@ -975,38 +1000,65 @@ def build_parser():
     config_p.add_argument("provider", choices=list(PROVIDERS.keys()), help="提供商")
     config_p.add_argument("api_key", help="API Key")
     config_p.add_argument("model", nargs="?", default=None, help="模型名称（可选）")
-    config_p.add_argument("--scope", choices=["project", "global"], default="project",
-                          help="作用域: project（当前项目）或 global（全局，默认 project）")
-    config_p.add_argument("--plan", default=None,
-                          help="计费方案（仅阿里云: token_team / coding / payg）")
-    config_p.add_argument("--no-backup", "-nbk", action="store_true",
-                          help="不备份原配置文件")
+    config_p.add_argument(
+        "--scope",
+        choices=["project", "global"],
+        default="project",
+        help="作用域: project（当前项目）或 global（全局，默认 project）",
+    )
+    config_p.add_argument(
+        "--plan", default=None, help="计费方案（仅阿里云: token_team / coding / payg）"
+    )
+    config_p.add_argument(
+        "--no-backup", "-nbk", action="store_true", help="不备份原配置文件"
+    )
 
     show_p = sub.add_parser("show", help="显示当前配置")
-    show_p.add_argument("--scope", choices=["project", "global"], default="project",
-                        help="作用域（默认 project）")
+    show_p.add_argument(
+        "--scope",
+        choices=["project", "global"],
+        default="project",
+        help="作用域（默认 project）",
+    )
 
     remove_p = sub.add_parser("remove", help="移除配置")
-    remove_p.add_argument("provider", nargs="?", default=None, help="提供商名称（可选，留空则清除所有）")
-    remove_p.add_argument("--scope", choices=["project", "global"], default="project",
-                          help="作用域（默认 project）")
-    remove_p.add_argument("--no-backup", "-nbk", action="store_true",
-                          help="不备份原配置文件")
+    remove_p.add_argument(
+        "provider", nargs="?", default=None, help="提供商名称（可选，留空则清除所有）"
+    )
+    remove_p.add_argument(
+        "--scope",
+        choices=["project", "global"],
+        default="project",
+        help="作用域（默认 project）",
+    )
+    remove_p.add_argument(
+        "--no-backup", "-nbk", action="store_true", help="不备份原配置文件"
+    )
 
     clear_p = sub.add_parser("clear", help="清除所有环境变量配置")
-    clear_p.add_argument("--scope", choices=["project", "global"], default="project",
-                         help="作用域（默认 project）")
-    clear_p.add_argument("--no-backup", "-nbk", action="store_true",
-                         help="不备份原配置文件")
+    clear_p.add_argument(
+        "--scope",
+        choices=["project", "global"],
+        default="project",
+        help="作用域（默认 project）",
+    )
+    clear_p.add_argument(
+        "--no-backup", "-nbk", action="store_true", help="不备份原配置文件"
+    )
 
     sub.add_parser("interactive", help="交互式配置向导")
     sub.add_parser("help", help="显示帮助信息")
 
     uninstall_p = sub.add_parser("uninstall", help="卸载本程序及相关配置")
-    uninstall_p.add_argument("--no-backup", action="store_true", default=False,
-                             help="不备份配置文件")
-    uninstall_p.add_argument("--no-cache", action="store_true", default=False,
-                             help="不清除 API 缓存（默认保留）")
+    uninstall_p.add_argument(
+        "--no-backup", action="store_true", default=False, help="不备份配置文件"
+    )
+    uninstall_p.add_argument(
+        "--no-cache",
+        action="store_true",
+        default=False,
+        help="不清除 API 缓存（默认保留）",
+    )
 
     # Vault commands
     vault_p = sub.add_parser("vault", help="管理加密的 API Key 存储")
@@ -1045,7 +1097,14 @@ def main():
 
     elif args.command == "config":
         do_backup = not args.no_backup
-        apply_config(args.scope, args.provider, args.api_key, args.model, args.plan, do_backup=do_backup)
+        apply_config(
+            args.scope,
+            args.provider,
+            args.api_key,
+            args.model,
+            args.plan,
+            do_backup=do_backup,
+        )
 
     elif args.command == "show":
         show_current_config(args.scope)
