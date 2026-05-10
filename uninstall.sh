@@ -12,7 +12,7 @@ YELLOW='\033[1;33m'
 CYAN='\033[0;36m'
 NC='\033[0m'
 
-INSTALLER_VERSION="0.0.3-beta"
+INSTALLER_VERSION="0.0.4-beta"
 
 log_info()  { echo -e "${GREEN}[INFO]${NC} $1"; }
 log_warn()  { echo -e "${YELLOW}[WARN]${NC} $1"; }
@@ -103,9 +103,11 @@ fi
 if [[ "$SYSTEM_INSTALL" == false ]]; then
     log_step "清理 PATH 环境变量"
 
-    if [[ ":$PATH:" == *":$HOME/.local/bin:"* ]]; then
+    LOCAL_BIN="$(dirname "${BIN_PATH}")"
+    if [[ ":$PATH:" == *":${LOCAL_BIN}:"* ]]; then
         # 从当前会话 PATH 中移除
-        export PATH=$(echo "$PATH" | tr ':' '\n' | grep -v "^${HOME}/.local/bin$" | tr '\n' ':' | sed 's/:$//')
+        PATH=$(echo "$PATH" | tr ':' '\n' | grep -v "^${LOCAL_BIN}$" | paste -sd ':' -)
+        export PATH
     fi
 
     # 从 shell 配置中移除相关行
@@ -115,13 +117,6 @@ if [[ "$SYSTEM_INSTALL" == false ]]; then
             log_info "已从 $rcfile 中移除 PATH 条目"
         fi
     done
-fi
-
-# --- 清理构建产物(如果源码仍在本地) ---
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-if [[ -d "${SCRIPT_DIR}/build_temp" ]]; then
-    rm -rf "${SCRIPT_DIR}/build_temp"
-    log_info "已清理本地构建产物"
 fi
 
 echo ""
