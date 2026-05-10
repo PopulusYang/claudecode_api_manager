@@ -1,8 +1,11 @@
 /__pycache__
+*/__pycache__
 /.claude
 /.venv
 /build
 /claudebackup
+/dist
+/scripts/build_temp
 
 *.spec
 CLAUDE.md

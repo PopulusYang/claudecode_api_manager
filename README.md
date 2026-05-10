@@ -1,20 +1,20 @@
 # Claude Code Settings Manager
 
-满足一些人（包括我）不翻墙使用Claude code的需求
-国内 AI 厂商 Claude Code 配置管理器，支持 DeepSeek、阿里云百炼、智谱 GLM。
+-满足一些人（包括我）不翻墙使用Claude code的需求
+-国内 AI 厂商 Claude Code 配置管理器，支持 DeepSeek、阿里云百炼、智谱 GLM。
 
 ## 一键安装
 
 **Linux / macOS:**
 
  ```bash
- curl -sSL https://raw.githubusercontent.com/PopulusYang/claudecode_api_manager/main/install.sh | bash
+ curl -sSL https://raw.githubusercontent.com/PopulusYang/claudecode_api_manager/main/scripts/install.sh | bash
  ```
 
 **Windows (PowerShell):**
 
  ```powershell
- irm https://raw.githubusercontent.com/PopulusYang/claudecode_api_manager/main/install.ps1 | iex
+ irm https://raw.githubusercontent.com/PopulusYang/claudecode_api_manager/main/scripts/install.ps1 | iex
  ```
 
 ## 支持的提供商
@@ -68,45 +68,45 @@ cd claudecode_api_manager
 ### 交互式配置（推荐）
 
 ```bash
-python claude_settings_manager.py
+python src/claude_settings_manager.py
 ```
 
 ### 命令行配置
 
 ```bash
 # 列出所有提供商
-python claude_settings_manager.py list
+python src/claude_settings_manager.py list
 
 # 查看价格
-python claude_settings_manager.py price
-python claude_settings_manager.py price deepseek
+python src/claude_settings_manager.py price
+python src/claude_settings_manager.py price deepseek
 
 # 配置 DeepSeek
-python claude_settings_manager.py config deepseek sk-xxx deepseek-chat
+python src/claude_settings_manager.py config deepseek sk-xxx deepseek-chat
 
 # 配置阿里云 Coding Plan
-python claude_settings_manager.py config aliyun sk-xxx qwen3.6-plus --plan coding
+python src/claude_settings_manager.py config aliyun sk-xxx qwen3.6-plus --plan coding
 
 # 配置阿里云按量计费
-python claude_settings_manager.py config aliyun sk-xxx qwen3.6-plus --plan payg
+python src/claude_settings_manager.py config aliyun sk-xxx qwen3.6-plus --plan payg
 
 # 配置阿里云 Token Plan 团队版
-python claude_settings_manager.py config aliyun sk-xxx qwen3.6-plus --plan token_team
+python src/claude_settings_manager.py config aliyun sk-xxx qwen3.6-plus --plan token_team
 
 # 配置智谱
-python claude_settings_manager.py config zhipu your_api_key GLM-4.7
+python src/claude_settings_manager.py config zhipu your_api_key GLM-4.7
 
 # 全局配置（写入 ~/.claude/settings.json，会提示确认）
-python claude_settings_manager.py config deepseek sk-xxx --scope global
+python src/claude_settings_manager.py config deepseek sk-xxx --scope global
 
 # 查看当前配置
-python claude_settings_manager.py show
+python src/claude_settings_manager.py show
 
 # 移除配置
-python claude_settings_manager.py remove deepseek
+python src/claude_settings_manager.py remove deepseek
 
 # 清除所有配置
-python claude_settings_manager.py clear
+python src/claude_settings_manager.py clear
 ```
 
 ## 配置原理

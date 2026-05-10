@@ -111,7 +111,7 @@ if (Test-Path $SourceFile) {
     # 优先尝试直接下载单个 Python 文件 (不需要 git)
     $RepoBranch = "main"
     $RawBaseUrl = "https://raw.githubusercontent.com/PopulusYang/claudecode_api_manager/$RepoBranch"
-    $SourceUrl = "$RawBaseUrl/claude_settings_manager.py"
+    $SourceUrl = "$RawBaseUrl/src/claude_settings_manager.py"
 
     try {
         Write-Info "下载 $SourceUrl ..."
@@ -119,7 +119,7 @@ if (Test-Path $SourceFile) {
         Invoke-WebRequest -Uri $SourceUrl -OutFile $SourceFile -UseBasicParsing
 
         # 同时下载卸载脚本
-        $UninstallUrl = "$RawBaseUrl/uninstall.ps1"
+        $UninstallUrl = "$RawBaseUrl/scripts/uninstall.ps1"
         $UninstallDest = Join-Path $ScriptDir "uninstall.ps1"
         try {
             Write-Info "下载卸载脚本 ..."

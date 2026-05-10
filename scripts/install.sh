@@ -83,13 +83,13 @@ else
 
     REPO_BRANCH="main"
     RAW_BASE_URL="https://raw.githubusercontent.com/PopulusYang/claudecode_api_manager/${REPO_BRANCH}"
-    SOURCE_URL="${RAW_BASE_URL}/claude_settings_manager.py"
+    SOURCE_URL="${RAW_BASE_URL}/src/claude_settings_manager.py"
 
     mkdir -p "${SCRIPT_DIR}"
 
     if curl -fsSL "${SOURCE_URL}" -o "${SCRIPT_DIR}/claude_settings_manager.py" 2>/dev/null; then
         # 同时下载卸载脚本
-        UNINSTALL_URL="${RAW_BASE_URL}/uninstall.sh"
+        UNINSTALL_URL="${RAW_BASE_URL}/scripts/uninstall.sh"
         curl -fsSL "${UNINSTALL_URL}" -o "${SCRIPT_DIR}/uninstall.sh" 2>/dev/null || true
 
         BUILD_DIR="${SCRIPT_DIR}"
