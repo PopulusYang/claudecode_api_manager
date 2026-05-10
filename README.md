@@ -1,7 +1,7 @@
 # Claude Code Settings Manager
 
--满足一些人（包括我）不翻墙使用Claude code的需求
--国内 AI 厂商 Claude Code 配置管理器，支持 DeepSeek、阿里云百炼、智谱 GLM。
+- 满足一些人（包括我）不翻墙使用Claude code的需求
+- 国内 AI 厂商 Claude Code 配置管理器，支持 DeepSeek、阿里云百炼、智谱 GLM。
 
 ## 一键安装
 
