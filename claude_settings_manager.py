@@ -1,4 +1,4 @@
-__app_version__ = "0.0.1-beta"
+__app_version__ = "0.0.2-beta"
 
 """
 Claude Code Settings Manager - 国内AI厂商配置管理器
@@ -9,6 +9,7 @@ import argparse
 import json
 import os
 import shutil
+import subprocess
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -916,10 +917,15 @@ def do_uninstall(no_backup: bool = False, no_cache: bool = False):
         print()
         print("  运行卸载脚本...")
         if sys.platform == "win32":
-            os.system(
-                f'powershell -ExecutionPolicy Bypass -File "{uninstall_script}" '
-                f'-BinDir "{bin_dir}" -InstallDir "{install_dir}"'
-            )
+            # Windows: 生成临时 bat, 等待本进程退出后再执行卸载脚本
+            bat = os.path.join(os.environ.get("TEMP", ""), "claude-mng-uninstall.bat")
+            with open(bat, "w") as f:
+                f.write(f'@echo off\n')
+                f.write(f'timeout /t 2 /nobreak >nul\n')
+                f.write(f'powershell -ExecutionPolicy Bypass -File "{uninstall_script}" '
+                        f'-BinDir "{bin_dir}" -InstallDir "{install_dir}"\n')
+                f.write(f'del "%~f0"\n')
+            subprocess.Popen(["cmd", "/c", "start", "/min", bat], shell=True)
         else:
             os.chmod(uninstall_script, 0o755)
             os.system(f'bash "{uninstall_script}" --bin-dir "{bin_dir}" --install-dir "{install_dir}"')
@@ -939,7 +945,6 @@ def do_uninstall(no_backup: bool = False, no_cache: bool = False):
                 if os.path.isdir(install_dir):
                     f.write(f'rmdir /s /q "{install_dir}"\n')
                 f.write(f'del "%~f0"\n')
-            import subprocess
             subprocess.Popen(["cmd", "/c", "start", "/min", bat], shell=True)
         else:
             if os.path.isfile(exe_path):
