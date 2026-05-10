@@ -8,6 +8,7 @@ Claude Code Settings Manager - 国内AI厂商配置管理器
 import argparse
 import json
 import os
+import shutil
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -282,7 +283,6 @@ def backup_settings(path: Path):
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     backup_name = f"{path.stem}_{timestamp}{path.suffix}"
     backup_path = BACKUP_DIR / backup_name
-    import shutil
     shutil.copy2(path, backup_path)
     print(f"  已备份: {backup_path}")
 
@@ -820,6 +820,119 @@ def remove_config(scope, provider_key=None, do_backup=True):
         print("  已清除所有环境变量配置")
 
 
+def do_uninstall(no_backup: bool = False, no_cache: bool = False):
+    """交互式卸载:备份配置/缓存后运行卸载脚本"""
+
+    exe_path = os.path.abspath(sys.executable if getattr(sys, "frozen", False) else __file__)
+    bin_dir = os.path.dirname(exe_path)
+
+    # 查找卸载脚本
+    if sys.platform == "win32":
+        uninstall_script = os.path.join(bin_dir, "uninstall.ps1")
+    else:
+        uninstall_script = os.path.join(bin_dir, "uninstall.sh")
+
+    # 检查安装目录
+    install_dir = bin_dir
+    if sys.platform == "win32" and bin_dir.lower().endswith("bin"):
+        # 用户安装: ~/.local/bin -> 检查 ~/.local/claude-mng
+        parent = os.path.dirname(bin_dir)
+        alt_dir = os.path.join(parent, "claude-mng")
+        if os.path.isdir(alt_dir):
+            install_dir = alt_dir
+        elif os.path.isdir(r"C:\Program Files\claude-mng"):
+            install_dir = r"C:\Program Files\claude-mng"
+    elif sys.platform != "win32":
+        if os.path.isdir("/opt/claude-mng"):
+            install_dir = "/opt/claude-mng"
+        elif os.path.isdir(os.path.expanduser("~/.local/claude-mng")):
+            install_dir = os.path.expanduser("~/.local/claude-mng")
+
+    # 收集需要清理的内容
+    clauderc = Path.home() / ".claude" / "CLAUDE.json"
+    clauderc_global = Path.home() / ".claude" / "CLAUDE.global.json"
+    cache_dir = Path.home() / ".claude" / "cache"
+
+    has_settings = clauderc.exists() or clauderc_global.exists()
+    has_cache = cache_dir.exists() and any(cache_dir.iterdir())
+    has_uninstall_script = os.path.isfile(uninstall_script)
+
+    print()
+    print("============================================")
+    print("  Claude Code Settings Manager 卸载")
+    print("============================================")
+    print()
+    print("即将卸载以下内容:")
+
+    if has_settings:
+        print("  [ ] Claude Code 配置文件 (CLAUDE.json)")
+    if has_cache:
+        print("  [ ] API 缓存数据")
+    print(f"  [ ] 二进制程序 (位于 {bin_dir})")
+    if os.path.isdir(install_dir) and install_dir != bin_dir:
+        print(f"  [ ] 安装目录 ({install_dir})")
+    print()
+
+    if not no_backup and has_settings:
+        ans = input("是否备份配置文件到 ~/.claude/backup/ ? [Y/n]: ").strip()
+        if ans.lower() not in ("", "n", "no"):
+            backup_dir = Path.home() / ".claude" / "backup"
+            backup_dir.mkdir(parents=True, exist_ok=True)
+            ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+            for f in (clauderc, clauderc_global):
+                if f.exists():
+                    dst = backup_dir / f"{f.name}.{ts}.bak"
+                    shutil.copy2(f, dst)
+                    print(f"  已备份 {f} -> {dst}")
+
+    if not no_cache and has_cache:
+        ans = input("是否清除 API 缓存? [y/N]: ").strip()
+        if ans.lower() in ("y", "yes"):
+            shutil.rmtree(cache_dir)
+            print("  已清除 API 缓存")
+
+    if not no_backup and has_settings:
+        ans = input("是否保留原始配置文件? [Y/n]: ").strip()
+        if ans.lower() in ("n", "no"):
+            if clauderc.exists():
+                clauderc.unlink()
+                print("  已删除 CLAUDE.json")
+            if clauderc_global.exists():
+                clauderc_global.unlink()
+                print("  已删除 CLAUDE.global.json")
+
+    # 确认卸载
+    print()
+    confirm = input("确认继续卸载? 这将删除本程序 [y/N]: ").strip()
+    if confirm.lower() not in ("y", "yes"):
+        print("  已取消卸载")
+        return
+
+    # 运行卸载脚本
+    if has_uninstall_script:
+        print()
+        print("  运行卸载脚本...")
+        if sys.platform == "win32":
+            os.system(f'powershell -ExecutionPolicy Bypass -File "{uninstall_script}"')
+        else:
+            os.chmod(uninstall_script, 0o755)
+            os.system(f'bash "{uninstall_script}"')
+    else:
+        # 没有卸载脚本时直接清理
+        print()
+        print("  未找到卸载脚本，手动清理中...")
+        self_exe = exe_path
+        if sys.platform == "win32" and not self_exe.endswith(".exe"):
+            self_exe = os.path.join(bin_dir, "claude-mng.exe")
+        if os.path.isfile(self_exe):
+            os.remove(self_exe)
+        if os.path.isdir(install_dir):
+            shutil.rmtree(install_dir, ignore_errors=True)
+
+    print()
+    print("  卸载完成")
+
+
 def build_parser():
     """构建 argparse 参数解析器"""
     parser = argparse.ArgumentParser(
@@ -864,6 +977,12 @@ def build_parser():
 
     sub.add_parser("interactive", help="交互式配置向导")
     sub.add_parser("help", help="显示帮助信息")
+
+    uninstall_p = sub.add_parser("uninstall", help="卸载本程序及相关配置")
+    uninstall_p.add_argument("--no-backup", action="store_true", default=False,
+                             help="不备份配置文件")
+    uninstall_p.add_argument("--no-cache", action="store_true", default=False,
+                             help="不清除 API 缓存（默认保留）")
 
     # Vault commands
     vault_p = sub.add_parser("vault", help="管理加密的 API Key 存储")
@@ -918,6 +1037,9 @@ def main():
 
     elif args.command == "help":
         parser.print_help()
+
+    elif args.command == "uninstall":
+        do_uninstall(no_backup=args.no_backup, no_cache=args.no_cache)
 
     elif args.command == "vault":
         if args.vault_cmd == "list":

@@ -1,0 +1,113 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# ============================================
+# Claude Code Settings Manager 一键卸载脚本
+# 删除二进制、安装目录和 PATH 环境变量
+# ============================================
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+CYAN='\033[0;36m'
+NC='\033[0m'
+
+SCRIPT_VERSION="0.0.1-beta"
+
+log_info()  { echo -e "${GREEN}[INFO]${NC} $1"; }
+log_warn()  { echo -e "${YELLOW}[WARN]${NC} $1"; }
+log_error() { echo -e "${RED}[ERROR]${NC} $1"; }
+log_step()  { echo -e "${CYAN}==> $1${NC}"; }
+
+log_info "Claude Code Settings Manager 卸载脚本 ${SCRIPT_VERSION}"
+
+BIN_NAME="claude-mng"
+BIN_PATH="/usr/local/bin/${BIN_NAME}"
+INSTALL_DIR="/opt/claude-mng"
+
+# --- 权限检测 ---
+if [[ $EUID -eq 0 ]]; then
+    log_info "以 root 运行，将卸载系统目录 ${INSTALL_DIR}"
+    SYSTEM_INSTALL=true
+else
+    INSTALL_DIR="${HOME}/.local/claude-mng"
+    BIN_PATH="${HOME}/.local/bin/${BIN_NAME}"
+    SYSTEM_INSTALL=false
+    log_info "将卸载用户目录安装 ${INSTALL_DIR}"
+fi
+
+log_step "检查安装状态"
+
+FOUND=false
+
+if [[ -f "${BIN_PATH}" ]]; then
+    log_info "找到已安装的二进制: ${BIN_PATH}"
+    FOUND=true
+fi
+if [[ -d "${INSTALL_DIR}" ]]; then
+    log_info "找到安装目录: ${INSTALL_DIR}"
+    FOUND=true
+fi
+
+if [[ "$FOUND" == false ]]; then
+    log_warn "未检测到 Claude Code Settings Manager 的安装"
+    exit 0
+fi
+
+# --- 确认卸载 ---
+echo ""
+read -rp "确认卸载? 这将删除上述文件 [y/N]: " confirm
+if [[ ! "$confirm" =~ ^[Yy]$ ]]; then
+    log_info "取消卸载"
+    exit 0
+fi
+
+# --- 删除二进制 ---
+log_step "删除二进制文件"
+
+if [[ -f "${BIN_PATH}" ]]; then
+    rm -f "${BIN_PATH}"
+    log_info "已删除 ${BIN_PATH}"
+fi
+
+# --- 删除安装目录 ---
+log_step "删除安装目录"
+
+if [[ -d "${INSTALL_DIR}" ]]; then
+    rm -rf "${INSTALL_DIR}"
+    log_info "已删除 ${INSTALL_DIR}"
+fi
+
+# --- 清理 PATH (非 root 安装) ---
+if [[ "$SYSTEM_INSTALL" == false ]]; then
+    log_step "清理 PATH 环境变量"
+
+    if [[ ":$PATH:" == *":$HOME/.local/bin:"* ]]; then
+        # 从当前会话 PATH 中移除
+        export PATH=$(echo "$PATH" | tr ':' '\n' | grep -v "^${HOME}/.local/bin$" | tr '\n' ':' | sed 's/:$//')
+    fi
+
+    # 从 shell 配置中移除相关行
+    for rcfile in "${HOME}/.bashrc" "${HOME}/.zshrc" "${HOME}/.bash_profile" "${HOME}/.profile"; do
+        if [[ -f "$rcfile" ]] && grep -q ".local/bin.*claude-mng\|claude-mng.*.local/bin" "$rcfile" 2>/dev/null; then
+            sed -i '/\.local\/bin.*claude-mng\|claude-mng.*\.local\/bin/d' "$rcfile"
+            log_info "已从 $rcfile 中移除 PATH 条目"
+        fi
+    done
+fi
+
+# --- 清理构建产物(如果源码仍在本地) ---
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [[ -d "${SCRIPT_DIR}/build_temp" ]]; then
+    rm -rf "${SCRIPT_DIR}/build_temp"
+    log_info "已清理本地构建产物"
+fi
+
+echo ""
+echo "============================================"
+echo "  卸载完成!"
+echo "============================================"
+echo ""
+echo "如需重新安装，运行:"
+echo "  curl -fsSL https://raw.githubusercontent.com/PopulusYang/claudecode_api_manager/main/install.sh | bash"
+echo ""

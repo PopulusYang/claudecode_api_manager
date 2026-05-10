@@ -120,6 +120,21 @@ fi
 cp "${BUILD_TEMP}/dist/claude-mng" "${BIN_PATH}"
 chmod +x "${BIN_PATH}"
 
+# --- 安装卸载脚本 ---
+UNINSTALL_SRC="${SCRIPT_DIR}/uninstall.sh"
+UNINSTALL_DST="${HOME}/.local/claude-mng/uninstall.sh"
+if $SYSTEM_INSTALL; then
+    UNINSTALL_DST="/opt/claude-mng/uninstall.sh"
+fi
+mkdir -p "$(dirname "${UNINSTALL_DST}")"
+if [[ -f "${UNINSTALL_SRC}" ]]; then
+    cp "${UNINSTALL_SRC}" "${UNINSTALL_DST}"
+    chmod +x "${UNINSTALL_DST}"
+    log_info "已安装卸载脚本到 ${UNINSTALL_DST}"
+else
+    log_warn "未找到 uninstall.sh，无法安装卸载脚本"
+fi
+
 if ! $SYSTEM_INSTALL; then
     echo ""
     log_info "请将 ${HOME}/.local/bin 加入 PATH:"
@@ -224,5 +239,6 @@ echo "  claude-mng                   # 启动交互式配置"
 echo "  claude-mng list              # 列出所有提供商"
 echo "  claude-mng show              # 查看当前配置"
 echo "  claude-mng price             # 查看价格参考"
+echo "  claude-mng uninstall         # 卸载本程序"
 echo "  claude                       # 启动 Claude Code"
 echo ""

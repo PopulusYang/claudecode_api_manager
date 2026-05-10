@@ -194,6 +194,16 @@ if (Test-Path $TargetExe) {
 Copy-Item -Path $BuiltExe -Destination $TargetExe -Force
 Write-Info "已安装到 $TargetExe"
 
+# --- 安装卸载脚本 ---
+$UninstallSource = Join-Path $ScriptDir "uninstall.ps1"
+$UninstallTarget = Join-Path $BinDir "uninstall.ps1"
+if (Test-Path $UninstallSource) {
+    Copy-Item -Path $UninstallSource -Destination $UninstallTarget -Force
+    Write-Info "已安装卸载脚本到 $UninstallTarget"
+} else {
+    Write-Warn "未找到 uninstall.ps1,无法安装卸载脚本"
+}
+
 # --- 确保 BinDir 在 PATH 中 ---
 $UserPath  = [Environment]::GetEnvironmentVariable("PATH", "User")
 $SystemPath = [Environment]::GetEnvironmentVariable("PATH", "Machine")
@@ -313,5 +323,6 @@ Write-Host "  claude-mng                   # 启动交互式配置"
 Write-Host "  claude-mng list              # 列出所有提供商"
 Write-Host "  claude-mng show              # 查看当前配置"
 Write-Host "  claude-mng price             # 查看价格参考"
+Write-Host "  claude-mng uninstall         # 卸载本程序"
 Write-Host "  claude                       # 启动 Claude Code"
 Write-Host ""
