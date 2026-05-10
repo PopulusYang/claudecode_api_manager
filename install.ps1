@@ -51,6 +51,9 @@ Write-Info "Python 版本: $PyVersion"
 # --- 安装构建依赖 ---
 Write-Step "安装构建依赖 (PyInstaller + cryptography)"
 
+# PyInstaller 与旧版 pathlib 不兼容, Python 3.4+ 已内置 pathlib
+& $PythonCmd -m pip uninstall -y pathlib 2>$null | Out-Null
+
 function Invoke-PipInstall {
     param([string[]]$Packages)
     # Try pip3 first, then pip, then python -m pip
