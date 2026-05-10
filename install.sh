@@ -147,7 +147,7 @@ cp "${BUILD_TEMP}/dist/claude-mng" "${BIN_PATH}"
 chmod +x "${BIN_PATH}"
 
 # --- 安装卸载脚本 ---
-UNINSTALL_SRC="${SCRIPT_DIR}/uninstall.sh"
+UNINSTALL_SRC="${BUILD_DIR}/uninstall.sh"
 UNINSTALL_DST="${HOME}/.local/claude-mng/uninstall.sh"
 if $SYSTEM_INSTALL; then
     UNINSTALL_DST="/opt/claude-mng/uninstall.sh"
