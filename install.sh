@@ -13,7 +13,7 @@ YELLOW='\033[1;33m'
 CYAN='\033[0;36m'
 NC='\033[0m'
 
-INSTALLER_VERSION="0.0.4-beta"
+INSTALLER_VERSION="0.0.5-beta"
 
 log_info()  { echo -e "${GREEN}[INFO]${NC} $1"; }
 log_warn()  { echo -e "${YELLOW}[WARN]${NC} $1"; }
@@ -146,13 +146,9 @@ fi
 cp "${BUILD_TEMP}/dist/claude-mng" "${BIN_PATH}"
 chmod +x "${BIN_PATH}"
 
-# --- 安装卸载脚本 ---
+# --- 安装卸载脚本(放在二进制同目录) ---
 UNINSTALL_SRC="${BUILD_DIR}/uninstall.sh"
-UNINSTALL_DST="${HOME}/.local/claude-mng/uninstall.sh"
-if $SYSTEM_INSTALL; then
-    UNINSTALL_DST="/opt/claude-mng/uninstall.sh"
-fi
-mkdir -p "$(dirname "${UNINSTALL_DST}")"
+UNINSTALL_DST="$(dirname "${BIN_PATH}")/uninstall.sh"
 if [[ -f "${UNINSTALL_SRC}" ]]; then
     cp "${UNINSTALL_SRC}" "${UNINSTALL_DST}"
     chmod +x "${UNINSTALL_DST}"
