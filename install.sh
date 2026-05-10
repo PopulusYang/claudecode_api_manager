@@ -13,7 +13,7 @@ YELLOW='\033[1;33m'
 CYAN='\033[0;36m'
 NC='\033[0m'
 
-INSTALLER_VERSION="0.0.3-beta"
+INSTALLER_VERSION="0.0.4-beta"
 
 log_info()  { echo -e "${GREEN}[INFO]${NC} $1"; }
 log_warn()  { echo -e "${YELLOW}[WARN]${NC} $1"; }
@@ -65,19 +65,42 @@ log_info "构建依赖安装完成"
 # --- 获取源码 ---
 log_step "准备源码"
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# 兼容 curl | bash 管道模式: BASH_SOURCE 可能为空
+if [[ -n "${BASH_SOURCE[0]+x}" && -f "${BASH_SOURCE[0]}" ]]; then
+    SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+else
+    SCRIPT_DIR="$(pwd)"
+fi
 
 if [[ -f "${SCRIPT_DIR}/claude_settings_manager.py" ]]; then
     log_info "检测到本地源码，使用当前目录"
     BUILD_DIR="${SCRIPT_DIR}"
     COPY_SOURCE=true
 else
-    log_warn "未检测到本地源码，将从 GitHub 克隆"
-    read -rp "请输入仓库地址 (直接回车使用默认): " repo_url
-    repo_url="${repo_url:-https://github.com/PopulusYang/claudecode_api_manager.git}"
-    git clone "$repo_url" "${INSTALL_DIR}"
-    BUILD_DIR="${INSTALL_DIR}"
-    COPY_SOURCE=false
+    log_info "未检测到本地源码，尝试从 GitHub 下载"
+
+    REPO_BRANCH="main"
+    RAW_BASE_URL="https://raw.githubusercontent.com/PopulusYang/claudecode_api_manager/${REPO_BRANCH}"
+    SOURCE_URL="${RAW_BASE_URL}/claude_settings_manager.py"
+
+    mkdir -p "${SCRIPT_DIR}"
+
+    if curl -fsSL "${SOURCE_URL}" -o "${SCRIPT_DIR}/claude_settings_manager.py" 2>/dev/null; then
+        # 同时下载卸载脚本
+        UNINSTALL_URL="${RAW_BASE_URL}/uninstall.sh"
+        curl -fsSL "${UNINSTALL_URL}" -o "${SCRIPT_DIR}/uninstall.sh" 2>/dev/null || true
+
+        BUILD_DIR="${SCRIPT_DIR}"
+        COPY_SOURCE=true
+        log_info "源码下载完成"
+    else
+        log_warn "直接下载失败，将从 GitHub 克隆"
+        read -rp "请输入仓库地址 (直接回车使用默认): " repo_url
+        repo_url="${repo_url:-https://github.com/PopulusYang/claudecode_api_manager.git}"
+        git clone "$repo_url" "${INSTALL_DIR}"
+        BUILD_DIR="${INSTALL_DIR}"
+        COPY_SOURCE=false
+    fi
 fi
 
 # --- 编译二进制 ---
@@ -105,10 +128,13 @@ log_info "编译完成"
 log_step "安装到 ${BIN_PATH}"
 
 if [[ -f "${BIN_PATH}" ]]; then
-    read -rp "${BIN_PATH} 已存在，是否覆盖? [y/N]: " overwrite
-    if [[ ! "$overwrite" =~ ^[Yy]$ ]]; then
-        log_info "取消安装"
-        exit 0
+    # 非交互模式(管道执行)自动覆盖，交互模式询问
+    if [[ -t 0 ]]; then
+        read -rp "${BIN_PATH} 已存在，是否覆盖? [y/N]: " overwrite
+        if [[ ! "$overwrite" =~ ^[Yy]$ ]]; then
+            log_info "取消安装"
+            exit 0
+        fi
     fi
 fi
 
