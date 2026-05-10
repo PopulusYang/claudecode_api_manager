@@ -5,6 +5,11 @@
 # 删除二进制、安装目录和 PATH 环境变量
 # ============================================
 
+param(
+    [string]$BinDir = "",
+    [string]$InstallDir = ""
+)
+
 $ErrorActionPreference = "Stop"
 $InstallerVersion = "0.0.1-beta"
 
@@ -14,15 +19,9 @@ function Write-Warn    { param($m) Write-Host "[WARN] $m" -ForegroundColor Yello
 function Write-Err     { param($m) Write-Host "[ERROR] $m" -ForegroundColor Red }
 function Write-Step    { param($m) Write-Host "==>$m" -ForegroundColor Cyan }
 
-Write-Info "卸载脚本版本: $InstallerVersion"
-
-# --- 参数: 接收调用者传入的实际安装路径 ---
-param(
-    [string]$BinDir = "",
-    [string]$InstallDir = ""
-)
-
 $BinName = "claude-mng.exe"
+
+Write-Info "卸载脚本版本: $InstallerVersion"
 
 if ($BinDir -and $InstallDir) {
     Write-Info "使用调用者传入的安装路径"
