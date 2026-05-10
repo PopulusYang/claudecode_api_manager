@@ -7,12 +7,16 @@
 # ============================================
 
 $ErrorActionPreference = "Stop"
+$ScriptVersion = "0.0.1-beta"
 
 # --- 颜色输出 ---
 function Write-Info    { param($m) Write-Host "[INFO] $m" -ForegroundColor Green }
 function Write-Warn    { param($m) Write-Host "[WARN] $m" -ForegroundColor Yellow }
 function Write-Err     { param($m) Write-Host "[ERROR] $m" -ForegroundColor Red }
 function Write-Step    { param($m) Write-Host "==>$m" -ForegroundColor Cyan }
+
+# --- 输出脚本版本 ---
+Write-Info "Claude Code Settings Manager 安装脚本 $ScriptVersion"
 
 # --- 确定安装路径 ---
 $BinName   = "claude-mng.exe"

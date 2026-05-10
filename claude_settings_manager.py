@@ -1,3 +1,5 @@
+__version__ = "0.0.1-beta"
+
 """
 Claude Code Settings Manager - 国内AI厂商配置管理器
 支持 DeepSeek、阿里云百炼、智谱GLM 等国内厂商的按量付费配置
@@ -821,9 +823,10 @@ def remove_config(scope, provider_key=None, do_backup=True):
 def build_parser():
     """构建 argparse 参数解析器"""
     parser = argparse.ArgumentParser(
-        prog="claude_settings_manager",
+        prog="claude-mng",
         description="Claude Code Settings Manager - 国内AI厂商配置管理器",
     )
+    parser.add_argument("--version", "-v", action="version", version=f"%(prog)s {__version__}")
     sub = parser.add_subparsers(dest="command", metavar="<command>")
 
     sub.add_parser("list", help="列出所有支持的提供商")
