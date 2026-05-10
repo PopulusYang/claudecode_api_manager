@@ -117,6 +117,17 @@ if (Test-Path $SourceFile) {
         Write-Info "下载 $SourceUrl ..."
         [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
         Invoke-WebRequest -Uri $SourceUrl -OutFile $SourceFile -UseBasicParsing
+
+        # 同时下载卸载脚本
+        $UninstallUrl = "$RawBaseUrl/uninstall.ps1"
+        $UninstallDest = Join-Path $ScriptDir "uninstall.ps1"
+        try {
+            Write-Info "下载卸载脚本 ..."
+            Invoke-WebRequest -Uri $UninstallUrl -OutFile $UninstallDest -UseBasicParsing
+        } catch {
+            Write-Warn "下载卸载脚本失败: $($_.Exception.Message)"
+        }
+
         $BuildDir = $ScriptDir
         $CopySource = $true
         Write-Info "源码下载完成"

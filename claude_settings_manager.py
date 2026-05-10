@@ -821,10 +821,11 @@ def remove_config(scope, provider_key=None, do_backup=True):
 
 
 def do_uninstall(no_backup: bool = False, no_cache: bool = False):
-    """交互式卸载:备份配置/缓存后运行卸载脚本"""
+    """交互式卸载:备份配置/缓存后删除程序"""
 
     exe_path = os.path.abspath(sys.executable if getattr(sys, "frozen", False) else __file__)
     bin_dir = os.path.dirname(exe_path)
+    is_frozen = getattr(sys, "frozen", False)
 
     # 查找卸载脚本
     if sys.platform == "win32":
@@ -835,7 +836,6 @@ def do_uninstall(no_backup: bool = False, no_cache: bool = False):
     # 检查安装目录
     install_dir = bin_dir
     if sys.platform == "win32" and bin_dir.lower().endswith("bin"):
-        # 用户安装: ~/.local/bin -> 检查 ~/.local/claude-mng
         parent = os.path.dirname(bin_dir)
         alt_dir = os.path.join(parent, "claude-mng")
         if os.path.isdir(alt_dir):
@@ -873,9 +873,10 @@ def do_uninstall(no_backup: bool = False, no_cache: bool = False):
         print(f"  [ ] 安装目录 ({install_dir})")
     print()
 
+    # 备份配置文件
     if not no_backup and has_settings:
         ans = input("是否备份配置文件到 ~/.claude/backup/ ? [Y/n]: ").strip()
-        if ans.lower() not in ("", "n", "no"):
+        if ans.lower() not in ("n", "no"):
             backup_dir = Path.home() / ".claude" / "backup"
             backup_dir.mkdir(parents=True, exist_ok=True)
             ts = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -885,12 +886,14 @@ def do_uninstall(no_backup: bool = False, no_cache: bool = False):
                     shutil.copy2(f, dst)
                     print(f"  已备份 {f} -> {dst}")
 
+    # 清除 API 缓存
     if not no_cache and has_cache:
         ans = input("是否清除 API 缓存? [y/N]: ").strip()
         if ans.lower() in ("y", "yes"):
             shutil.rmtree(cache_dir)
             print("  已清除 API 缓存")
 
+    # 删除原始配置文件
     if not no_backup and has_settings:
         ans = input("是否保留原始配置文件? [Y/n]: ").strip()
         if ans.lower() in ("n", "no"):
@@ -918,16 +921,29 @@ def do_uninstall(no_backup: bool = False, no_cache: bool = False):
             os.chmod(uninstall_script, 0o755)
             os.system(f'bash "{uninstall_script}"')
     else:
-        # 没有卸载脚本时直接清理
+        # 没有卸载脚本时,使用延迟自删
         print()
-        print("  未找到卸载脚本，手动清理中...")
-        self_exe = exe_path
-        if sys.platform == "win32" and not self_exe.endswith(".exe"):
-            self_exe = os.path.join(bin_dir, "claude-mng.exe")
-        if os.path.isfile(self_exe):
-            os.remove(self_exe)
-        if os.path.isdir(install_dir):
-            shutil.rmtree(install_dir, ignore_errors=True)
+        print("  未找到卸载脚本，使用延迟自删...")
+        if sys.platform == "win32":
+            bat = os.path.join(os.environ.get("TEMP", ""), "claude-mng-uninstall.bat")
+            self_exe = exe_path
+            if not self_exe.endswith(".exe"):
+                self_exe = os.path.join(bin_dir, "claude-mng.exe")
+            with open(bat, "w") as f:
+                f.write(f'@echo off\n')
+                f.write(f'timeout /t 2 /nobreak >nul\n')
+                f.write(f'del /f /q "{self_exe}"\n')
+                if os.path.isdir(install_dir):
+                    f.write(f'rmdir /s /q "{install_dir}"\n')
+                f.write(f'del "%~f0"\n')
+            import subprocess
+            subprocess.Popen(["cmd", "/c", "start", "/min", bat], shell=True)
+        else:
+            if os.path.isfile(exe_path):
+                os.remove(exe_path)
+            if os.path.isdir(install_dir):
+                shutil.rmtree(install_dir, ignore_errors=True)
+            print("  程序文件已删除")
 
     print()
     print("  卸载完成")
